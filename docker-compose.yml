@@ -1,0 +1,105 @@
+version: '3.9'
+
+services:
+  api-gateway:
+    build: ./api-gateway
+    ports:
+      - "8080:80"
+    depends_on:
+      - user-service
+      - product-service
+      - cart-service
+      - order-service
+      - payment-service
+      - shipping-service
+
+  user-service:
+    build: ./user-service
+    environment:
+      - DB_URL=postgres://user:pass@db-user:5432/users
+    depends_on:
+      - db-user
+
+  db-user:
+    image: postgres
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+      POSTGRES_DB: users
+
+  product-service:
+    build: ./product-service
+    depends_on:
+      - db-product
+
+  db-product:
+    image: mongo
+
+  cart-service:
+    build: ./cart-service
+    depends_on:
+      - redis
+
+  redis:
+    image: redis
+
+  order-service:
+    build: ./order-service
+    depends_on:
+      - db-order
+
+  db-order:
+    image: postgres
+    environment:
+      POSTGRES_USER: order
+      POSTGRES_PASSWORD: pass
+      POSTGRES_DB: orders
+
+  payment-service:
+    build: ./payment-service
+    environment:
+      - PAYMENT_PROVIDER=stripe
+
+  shipping-service:
+    build: ./shipping-service
+
+  review-service:
+    build: ./review-service
+    depends_on:
+      - db-review
+
+  db-review:
+    image: mongo
+
+  return-refund-service:
+    build: ./return-refund-service
+    depends_on:
+      - rabbitmq
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+
+  analytics-service:
+    build: ./analytics-service
+    depends_on:
+      - kafka
+
+  kafka:
+    image: bitnami/kafka:latest
+    ports:
+      - "9092:9092"
+
+  supplier-service:
+    build: ./supplier-service
+    depends_on:
+      - db-supplier
+
+  db-supplier:
+    image: postgres
+    environment:
+      POSTGRES_USER: supplier
+      POSTGRES_PASSWORD: pass
+      POSTGRES_DB: suppliers
